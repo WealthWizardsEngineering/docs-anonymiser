@@ -17,6 +17,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN curl -LO http://nlp.stanford.edu/software/stanford-corenlp-full-${CORENLP_VERSION}.zip
 RUN unzip stanford-corenlp-full-${CORENLP_VERSION}.zip && \
 	  rm stanford-corenlp-full-${CORENLP_VERSION}.zip
-RUN export CLASSPATH=$(find . -name '*.jar')
 
 WORKDIR /docs-anonymiser
