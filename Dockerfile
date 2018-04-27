@@ -7,7 +7,7 @@ ENV CORENLP_VERSION=2018-02-27
 
 RUN mkdir -p /usr/share/man/man1
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y imagemagick gcc g++ libsm6 tk tesseract-ocr openjdk-8-jre-headless curl
+RUN apt-get install -y imagemagick gcc g++ libsm6 tk tesseract-ocr openjdk-8-jre-headless curl unzip
 RUN apt-get clean
 
 RUN pip install --no-cache-dir spacy
