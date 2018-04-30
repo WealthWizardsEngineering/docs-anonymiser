@@ -13,7 +13,7 @@ import numpy as np
 from skimage.transform import radon
 from skimage.morphology import disk, closing
 import matplotlib as mpl
-mpl.use('TkAgg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from pycorenlp import StanfordCoreNLP
