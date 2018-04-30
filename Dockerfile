@@ -21,11 +21,12 @@ RUN unzip stanford-corenlp-full-${CORENLP_VERSION}.zip && \
 
 RUN curl -LO https://codeload.github.com/tesseract-ocr/tesseract/zip/3.05.01
 RUN unzip tesseract-3.05.01.zip && rm tesseract-3.05.01.zip
-RUN tesseract-3.05.01
-RUN ./autogen.sh
-RUN	./configure
-RUN	make
-RUN make install
+RUN cd tesseract-3.05.01 && \
+    ./autogen.sh && \
+  	./configure && \
+  	make && \
+    make install && \
 RUN ldconfig
+RUN rm -rf /tesseract-3.05.01
 
 WORKDIR /docs-anonymiser
