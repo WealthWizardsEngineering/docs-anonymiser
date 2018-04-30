@@ -26,7 +26,7 @@ RUN cd tesseract-${TESSERACT_VERSION} && \
     ./autogen.sh && \
   	./configure && \
   	make && \
-    make install && \
+    make install
 RUN ldconfig
 RUN rm -rf /tesseract-${TESSERACT_VERSION}
 
