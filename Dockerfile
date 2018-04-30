@@ -4,6 +4,7 @@ ADD src/requirements.txt requirements.txt
 ADD src/anonymise.py /usr/local/bin/anonymise.py
 
 ENV CORENLP_VERSION=2017-06-09
+ENV TESSERACT_VERSION=3.05.01
 
 RUN mkdir -p /usr/share/man/man1
 RUN apt-get update && apt-get upgrade -y
@@ -19,14 +20,17 @@ RUN curl -LO http://nlp.stanford.edu/software/stanford-corenlp-full-${CORENLP_VE
 RUN unzip stanford-corenlp-full-${CORENLP_VERSION}.zip && \
 	  rm stanford-corenlp-full-${CORENLP_VERSION}.zip
 
-RUN curl -LO https://codeload.github.com/tesseract-ocr/tesseract/zip/3.05.01
-RUN unzip tesseract-3.05.01.zip && rm tesseract-3.05.01.zip
-RUN cd tesseract-3.05.01 && \
+RUN curl -L https://github.com/tesseract-ocr/tesseract/archive/${TESSERACT_VERSION}.zip -o tesseract-${TESSERACT_VERSION}.zip
+RUN unzip tesseract-${TESSERACT_VERSION}.zip && rm tesseract-${TESSERACT_VERSION}.zip
+RUN cd tesseract-${TESSERACT_VERSION} && \
     ./autogen.sh && \
   	./configure && \
   	make && \
     make install && \
 RUN ldconfig
-RUN rm -rf /tesseract-3.05.01
+RUN rm -rf /tesseract-${TESSERACT_VERSION}
+
+RUN cd /usr/local/share/tessdata && \
+    curl -LO https://github.com/tesseract-ocr/tessdata/raw/master/eng.traineddata
 
 WORKDIR /docs-anonymiser
