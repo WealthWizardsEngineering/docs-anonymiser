@@ -39,8 +39,10 @@ echo "Creating anonymised files in: $host_dir/Anonymised"
 
 image_name="quay.io/wealthwizards/docs-anonymiser"
 release=$(curl -s https://api.github.com/repos/WealthWizardsEngineering/docs-anonymiser/releases/latest |grep tag_name |cut -d \" -f 4)
-command="$workdir $SKEWNESS"
+
+corenlp_command="cd /stanford-corenlp-full-2017-06-09 && nohup java -mx4g -cp \"*\" edu.stanford.nlp.pipeline.StanfordCoreNLPServer &"
+anonymiser_command="anonymise.py $workdir $SKEWNESS"
 
 sudo -n docker run --rm -i \
   -v $host_dir:$workdir:Z \
-  $image_name:$release anonymise.py $command
+  $image_name:$release /bin/bash -c "($corenlp_command) && ($anonymiser_command)"
