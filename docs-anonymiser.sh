@@ -34,7 +34,7 @@ while test $# -gt 0; do
 done
 
 host_dir=$(realpath $DIR)
-workdir=$(grep WORKDIR Dockerfile | awk '{print $2}')
+workdir="/docs-anonymiser"
 echo "Creating anonymised files in: $host_dir/Anonymised"
 
 image_name="quay.io/wealthwizards/docs-anonymiser"
