@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from __future__ import division, print_function
 from wand.image import Image, Color
 from PIL import Image as PI
@@ -13,7 +11,7 @@ import numpy as np
 from skimage.transform import radon
 from skimage.morphology import disk, closing
 import matplotlib as mpl
-mpl.use('Agg')
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from pycorenlp import StanfordCoreNLP
@@ -41,19 +39,15 @@ def add_rectangle_to_image(image, rect):
     return image
 
 
-def preprocess_for_image(gray, preprocess_arg):
+def preprocess_for_image(gray, blur):
     # check to see if we should apply thresholding to preprocess
-    if preprocess_arg == "thresh":
-        #gray = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    if blur:
         gray = cv2.medianBlur(gray, 3)
         selem = disk(1)
         gray = closing(gray, selem)
-        gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 35, 10)
 
-    # make a check to see if median blurring should be done to remove
-    # noise
-    elif preprocess_arg == "blur":
-        gray = cv2.medianBlur(gray, 3)
+    gray = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 35, 10)
+
     return gray
 
 
@@ -117,7 +111,7 @@ def templates(term):
     return(match)
 
 
-def find_names(filename, rot_fl=0):
+def find_names(filename, rot_fl=0, blur=0):
     # load the example image and convert it to grayscale
 
     image_pdf = Image(filename=filename, resolution=300)
@@ -174,7 +168,7 @@ def find_names(filename, rot_fl=0):
             gray = cv2.cvtColor(conv_img, cv2.COLOR_BGR2GRAY)
         else:
             gray = conv_img
-        gray = preprocess_for_image(gray, preprocess_arg="thresh")
+        gray = preprocess_for_image(gray, blur)
 
         # Rotate images
         if rot_fl == 1:
@@ -187,7 +181,7 @@ def find_names(filename, rot_fl=0):
         gray = cv2.warpAffine(gray, M, (cols, rows))
         conv_img = cv2.warpAffine(conv_img, M, (cols, rows))
         page_text = pytesseract.image_to_string(gray, config='--psm 4 -c textord_heavy_nr=1')
-        #print(page_text)
+        print(page_text)
 
         doc_text = doc_text + page_text
 
@@ -280,7 +274,10 @@ def draw_boxes(search_terms, conv_img_list, gray_list, dir, filename):
                         if any(char.isdigit() for char in words[i+w][11]):
                             conv_img = blank_word(words[i+w], conv_img)
 
-                if (words[i][11] in ['D.o.B.', 'D.o.B', 'Birth',
+                if words[i][11] in ['Street', 'Drive', 'Road', 'Place', 'Close', 'Terrace']:
+                    conv_img = blank_word(words[i-1], conv_img)
+
+                if (words[i][11] in ['D.o.B.', 'D.o.B', 'Birth', 'B',
                                                              'D.o.B.:', 'D.o.B:', 'Birth:', 'DoB', 'DoB:']):
                     for w in range(5):
                         if any(char.isdigit() for char in words[i+w][11]):
@@ -305,6 +302,9 @@ def draw_boxes(search_terms, conv_img_list, gray_list, dir, filename):
         ax.set_yticks([])
         pp.savefig()
 
+        # cv2.imwrite("/Users/violetakovacheva/Documents/Annonimise_Samples/test.png", np.array(conv_img, dtype=np.uint8))
+        #cv2.imshow("Output", gray)
+        #cv2.waitKey(0)
 
     pp.close()
 
@@ -313,6 +313,8 @@ parser = argparse.ArgumentParser(description='Anonymise PDF documents.')
 
 parser.add_argument('dir', nargs='?', help="Directory with PDFs to process")
 parser.add_argument('skew', nargs='?', default=0, help="Skewness flag. Put 1 to correct skewness, 0 otherwise")
+parser.add_argument('blur', nargs='?', default=0, help="Blurring flag. Put 1 to correct noise, 0 otherwise")
+#filename = "/Users/violetakovacheva/Documents/Anonymise_Samples/Example One Page CV.pdf"
 
 
 args = parser.parse_args()
@@ -329,5 +331,5 @@ if not os.path.exists(outdir):
 for file in os.listdir(directory):
     filename = os.fsdecode(file)
     if filename.endswith(".pdf"):
-        [search_terms, conv_img_list, gray_list] = find_names(os.path.join(args.dir, filename), args.skew)
+        [search_terms, conv_img_list, gray_list] = find_names(os.path.join(args.dir, filename), args.skew, args.blur)
         draw_boxes(search_terms, conv_img_list, gray_list, outdir, filename)
