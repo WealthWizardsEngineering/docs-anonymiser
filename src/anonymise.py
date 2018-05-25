@@ -253,7 +253,7 @@ def find_names(filename, rot_fl=0, blur=0):
                 if templates(tok["word"]):
                     search_terms.append(tok["word"])
 
-        print('Spacy:')
+        #print('Spacy:')
         for label in labels:
             if label in in_labels:
                 entities = [cleanup(e.string, lower=False) for e in nlp_result_sp.ents if label == e.label_]
@@ -268,7 +268,7 @@ def find_names(filename, rot_fl=0, blur=0):
                                 and not wd.islower():
                             search_terms_sp.append(wd)
 
-        print(search_terms_sp)
+        #print(search_terms_sp)
 
         for ent in nltk_result:
             wds_list = re.split(' ', ent)
@@ -277,8 +277,8 @@ def find_names(filename, rot_fl=0, blur=0):
                         wd) > 1 and wd in others and not wd[0].islower():
                     search_terms_nl.append(wd)
 
-        print('NLTK:')
-        print(search_terms_nl)
+        #print('NLTK:')
+        #print(search_terms_nl)
     search_terms1 = []
 
     for term in search_terms_sp:
