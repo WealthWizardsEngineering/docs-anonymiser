@@ -15,6 +15,12 @@ mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from pycorenlp import StanfordCoreNLP
+import nltk
+#nltk.download('punkt')
+#nltk.download('averaged_perceptron_tagger')
+#nltk.download('maxent_ne_chunker')
+#nltk.download('words')
+
 try:
     # More accurate peak finding from https://gist.github.com/endolith/255291#file-parabolic-py
     from parabolic import parabolic
@@ -79,6 +85,37 @@ def rotation_spacing(I):
     return rotation
 
 
+def nltk_ner(text):
+    sentences = nltk.sent_tokenize(text)
+    sentences = [nltk.word_tokenize(sent) for sent in sentences]
+    sentences = [nltk.pos_tag(sent) for sent in sentences]
+    continuous_chunk = []
+    #current_chunk = []
+    for sent in sentences:
+        #print(sent)
+        #tokens = nltk.word_tokenize(sent)
+        #tagged = nltk.pos_tag(tokens)
+        entities = nltk.chunk.ne_chunk(sent)
+        for i in entities:
+            # if type(i) == Tree:
+            #     current_chunk.append(" ".join([token for token, pos in i.leaves()]))
+            # elif current_chunk:
+            #     named_entity = " ".join(current_chunk)
+            #     if named_entity not in continuous_chunk:
+            #         continuous_chunk.append(named_entity)
+            #         current_chunk = []
+            #else:
+            #    continue
+            if hasattr(i, 'label'):
+                if i.label() in ['GPE', 'PERSON', 'LOCATION', 'ORGANIZATION', 'FACILITY']:
+                    continuous_chunk.append(' '.join(c[0] for c in i))
+                    #print(i.label(), " ", ' '.join(c[0] for c in i), "\n")
+
+        #print(continuous_chunk)
+    return continuous_chunk
+
+
+
 def ner_extraction(text):
     output = nlp.annotate(text, properties={
         'annotators': 'ner',
@@ -123,8 +160,9 @@ def find_names(filename, rot_fl=0, blur=0):
     gray_list = []
     search_terms = []
     search_terms_sp = []
+    search_terms_nl = []
     doc_text = ''
-    fin_terms = ['Address', 'Administration', 'Age', 'Agree', 'Agreement', 'Allowance',
+    fin_terms = ['Address', 'Administration', 'Adviser', 'Age', 'Agree', 'Agreement', 'Allowance',
                  'Analysis', 'Annual', 'Approx', 'Assurance', 'Authority', 'Authorisation',
                  'Balanced', 'Bank', 'Benefit', 'Birth', 'Budget', 'Business',
                  'Capita', 'Capital', 'Capitalised', 'Cash', 'Centre', 'Charge', 'Choice', 'Civil',
@@ -135,12 +173,12 @@ def find_names(filename, rot_fl=0, blur=0):
                  'Fact', 'FAQ', 'Feature', 'Fee', 'File', 'Final', 'Financial',
                  'Flexibility', 'Forename', 'Free', 'Full', 'Fund',
                  'General', 'Government', 'Growth', 'Guide', 'Health',
-                 'Income', 'Increase', 'Identified', 'Index', 'Industry', 'Information', 'Insignificant',
+                 'Identified', 'Income', 'Increase', 'Index', 'Industry', 'Information', 'Insignificant',
                  'Insurance', 'Interest', 'International', 'Investment', 'Investor',
                  'Legal', 'Life', 'Lifetime', 'Limited', 'Lower', 'Lump',
                  'Marital', 'Member', 'Membership', 'Mobile', 'Money', 'Mutual', 'National', 'Nominated',
-                 'Normal', 'Note', 'Number', 'Offer', 'Office', 'Ongoing',
-                 'Option', 'Outcome', 'Partnership', 'Paying', 'Pension', 'Percentage', 'Period', 'Personal',
+                 'Normal', 'Note', 'Number', 'Offer', 'Office', 'Ongoing', 'Option', 'Organisation',
+                 'Outcome', 'Partnership', 'Paying', 'Pension', 'Percentage', 'Period', 'Personal',
                  'Phone', 'Please', 'Portfolio', 'Post', 'Price', 'Profile', 'Protection', 'Purchase',
                  'Rate', 'Reason', 'Recommendation', 'Reduce', 'Reduction', 'Reference',
                  'Register', 'Registered', 'Regulation', 'Regulator', 'Report',
@@ -149,7 +187,7 @@ def find_names(filename, rot_fl=0, blur=0):
                  'State', 'Statement', 'Statistics', 'Status', 'Subject', 'Sum', 'Summary', 'Support', 'Surname',
                  'Tax', 'Taxation', 'Tel', 'Telephone', 'Total', 'Transfer',
                  'Trust', 'Trustee', 'Type', 'Typical', 'Typically',
-                 'Unauthorised', 'Unit', 'Value', 'Version', 'Wealth', 'Yield', 'Your', 'Yours']
+                 'Unauthorised', 'Unit', 'Value', 'Version', 'Wealth', 'Work', 'Yield', 'Your', 'Yours']
 
     for img in image_jpeg.sequence:
         img_page = Image(image=img)
@@ -181,7 +219,7 @@ def find_names(filename, rot_fl=0, blur=0):
         gray = cv2.warpAffine(gray, M, (cols, rows))
         conv_img = cv2.warpAffine(conv_img, M, (cols, rows))
         page_text = pytesseract.image_to_string(gray, config='--psm 4 -c textord_heavy_nr=1')
-        print(page_text)
+        #print(page_text)
 
         doc_text = doc_text + page_text
 
@@ -190,6 +228,9 @@ def find_names(filename, rot_fl=0, blur=0):
 
         # NLP analysis
         nlp_result = ner_extraction(page_text)
+
+
+        nltk_result = nltk_ner(page_text)
 
         nlp_result_sp = nlp_sp(page_text)
         labels = set([w.label_ for w in nlp_result_sp.ents])
@@ -212,19 +253,32 @@ def find_names(filename, rot_fl=0, blur=0):
                 if templates(tok["word"]):
                     search_terms.append(tok["word"])
 
-
+        print('Spacy:')
         for label in labels:
             if label in in_labels:
                 entities = [cleanup(e.string, lower=False) for e in nlp_result_sp.ents if label == e.label_]
                 entities = list(set(entities))
+
                 #print(label, entities)
 
                 for ent in entities:
                     wds_list = re.split(' |\n', ent)
                     for wd in wds_list:
-                        if wd not in search_terms and wd not in search_terms_sp and len(wd) > 1 and wd in others and not wd.islower():
+                        if wd not in search_terms and wd not in search_terms_sp and len(wd) > 1 and wd in others\
+                                and not wd.islower():
                             search_terms_sp.append(wd)
 
+        print(search_terms_sp)
+
+        for ent in nltk_result:
+            wds_list = re.split(' ', ent)
+            for wd in wds_list:
+                if wd not in search_terms and wd not in search_terms_nl and len(
+                        wd) > 1 and wd in others and not wd[0].islower():
+                    search_terms_nl.append(wd)
+
+        print('NLTK:')
+        print(search_terms_nl)
     search_terms1 = []
 
     for term in search_terms_sp:
@@ -240,6 +294,7 @@ def find_names(filename, rot_fl=0, blur=0):
     #print(tel)
 
     search_terms = search_terms + search_terms1
+    print('Final:')
     print(search_terms)
     #Save search terms
     #text_file = open(filename[:-4] + 'terms.txt', "w")
