@@ -16,7 +16,7 @@ msgpack-numpy==0.4.1
 msgpack-python==0.5.4
 murmurhash==0.28.0
 networkx==2.1
-numpy==1.14.2
+numpy==1.22.0
 opencv-python==3.4.0.12
 parabolic==0.1.2
 pathlib==1.0.1
