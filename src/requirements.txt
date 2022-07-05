@@ -40,7 +40,7 @@ termcolor==1.1.0
 thinc==6.10.2
 toolz==0.9.0
 tqdm==4.19.9
-ujson==1.35
+ujson==5.4.0
 urllib3==1.24.2
 Wand==0.4.4
 wcwidth==0.1.7
